@@ -2,14 +2,12 @@
 {-# language MultiParamTypeClasses #-}
 {-# language FlexibleInstances #-}
 {-# language CPP #-}
+
 module Control.Monad.ReaderIO
-  (
-    ReaderIO (..)
-  )
-  where
+  ( ReaderIO (..)
+  ) where
 
 import Control.Monad.Fix
-import Control.Applicative
 import Control.Monad
 import Control.Monad.Reader.Class
 import Control.Monad.IO.Class
