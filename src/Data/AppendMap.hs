@@ -31,6 +31,7 @@ import qualified Data.Map.Internal.Debug as Map (showTree, showTreeWith)
 #else
 import qualified Data.Map as Map (showTree, showTreeWith)
 #endif
+
 import Data.Map.Monoidal
 #if !MIN_VERSION_witherable(0,3,2)
 import qualified Data.Map.Monoidal as MonoidalMap

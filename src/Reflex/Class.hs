@@ -682,6 +682,11 @@ instance Reflex t => Monad (Behavior t) where
   fail = error "Monad (Behavior t) does not support fail"
 #endif
 
+instance (Reflex t, Semigroup a) => Semigroup (Behavior t a) where
+  a <> b = pull $ liftM2 (<>) (sample a) (sample b)
+  sconcat = pull . fmap sconcat . mapM sample
+  stimes n = fmap $ stimes n
+
 instance (Reflex t, Monoid a) => Monoid (Behavior t a) where
   mempty = constant mempty
   mconcat = pull . fmap mconcat . mapM sample
@@ -703,11 +708,6 @@ instance (Num a, Reflex t) => Num (Dynamic t a) where
   fromInteger = pure . fromInteger
   negate = fmap negate
   (-) = liftA2 (-)
-
-instance (Reflex t, Semigroup a) => Semigroup (Behavior t a) where
-  a <> b = pull $ liftM2 (<>) (sample a) (sample b)
-  sconcat = pull . fmap sconcat . mapM sample
-  stimes n = fmap $ stimes n
 
 -- | Alias for 'mapMaybe'
 fmapMaybe :: Filterable f => (a -> Maybe b) -> f a -> f b
