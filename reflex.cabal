@@ -78,14 +78,14 @@ library
     hs-source-dirs:     src
     build-depends:
         MemoTrie >=0.6 && <0.7,
-        base >=4.11 && <4.21,
+        base >=4.11 && <4.22,
         bifunctors >=5.2 && <5.7,
         comonad >=5.0.4 && <5.1,
         commutative-semigroups >=0.1 && <0.3,
         constraints >=0.10 && <0.15,
         constraints-extras >=0.3 && <0.5,
         containers >=0.6 && <0.8,
-        data-default >=0.5 && <0.8,
+        data-default >=0.5 && <0.9,
         dependent-map >=0.3 && <0.5,
         dependent-sum >=0.6 && <0.8,
         exceptions >=0.10 && <0.11,
@@ -104,7 +104,7 @@ library
         semigroupoids >=4.0 && <7,
         stm >=2.4 && <2.6,
         syb >=0.5 && <0.8,
-        time >=1.4 && <1.13,
+        time >=1.4 && <1.15,
         transformers >=0.5 && <0.7,
         unbounded-delays >=0.1.0.0 && <0.2,
         witherable >=0.4 && <0.6
@@ -203,7 +203,7 @@ library
         build-depends:
             haskell-src-exts >=1.16 && <1.24,
             haskell-src-meta >=0.6 && <0.9,
-            template-haskell >=2.9 && <=2.22.0.0
+            template-haskell >= 2.9 && < 2.24
 
     if (flag(fast-weak) && impl(ghcjs >=0))
         cpp-options: -DGHCJS_FAST_WEAK
@@ -324,8 +324,7 @@ test-suite DebugCycles
         transformers,
         reflex,
         ref-tf <0.6,
-        witherable <0.6,
-        proctest <0.2
+        witherable <0.6
 
     if flag(split-these)
         build-depends:
