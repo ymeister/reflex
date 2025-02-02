@@ -84,7 +84,7 @@ instance (Monad (HostFrame t), ReflexHost t, Ref m ~ Ref IO) => PerformEvent t (
   {-# INLINABLE performEvent #-}
   performEvent = PerformEventT . requestingIdentity
 
-instance (ReflexHost t, PrimMonad (HostFrame t)) => Adjustable t (PerformEventT t m) where
+instance ReflexHost t => Adjustable t (PerformEventT t m) where
   runWithReplace outerA0 outerA' = PerformEventT $ runWithReplaceRequesterTWith f (coerce outerA0) (coerceEvent outerA')
     where f :: HostFrame t a -> Event t (HostFrame t b) -> RequesterT t (HostFrame t) Identity (HostFrame t) (a, Event t b)
           f a0 a' = do

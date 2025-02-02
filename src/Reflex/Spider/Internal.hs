@@ -20,6 +20,7 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE MultiWayIf #-}
+
 #ifdef USE_REFLEX_OPTIMIZER
 {-# OPTIONS_GHC -fplugin=Reflex.Optimizer #-}
 #endif
@@ -42,13 +43,21 @@ import Control.Monad.Reader.Class
 import Control.Monad.IO.Class
 import Control.Monad.ReaderIO
 import Control.Monad.Ref
+#if !MIN_VERSION_base(4,13,0)
+import Control.Monad.Fail (MonadFail)
+#endif
 import qualified Control.Monad.Fail as MonadFail
 import Data.Align
 import Data.Coerce
 import Data.Dependent.Map (DMap)
 import qualified Data.Dependent.Map as DMap
 import Data.Dependent.Sum (DSum (..))
-import Data.FastMutableIntMap (FastMutableIntMap)
+import Data.FastMutableIntMap (
+#if !MIN_VERSION_base(4,18,0)
+    PatchIntMap (..),
+#endif
+    FastMutableIntMap
+    )
 import qualified Data.FastMutableIntMap as FastMutableIntMap
 import Data.Foldable hiding (concat, elem, sequence_)
 import Data.Functor.Constant
@@ -76,8 +85,6 @@ import Witherable (Filterable, mapMaybe)
 #if !MIN_VERSION_base(4,18,0)
 import Control.Applicative (liftA2)
 import Control.Monad.Identity hiding (forM, forM_, mapM, mapM_)
-import Control.Monad.Fail (MonadFail)
-import Data.FastMutableIntMap (PatchIntMap (..))
 import Data.List (isPrefixOf)
 import Data.Monoid (mempty, (<>))
 #else
@@ -100,6 +107,10 @@ import Control.Monad.State hiding (forM, forM_, mapM, mapM_, sequence)
 import Data.List.NonEmpty (NonEmpty (..), nonEmpty)
 import qualified Data.List.NonEmpty as NonEmpty
 import Data.Tree (Forest, Tree (..), drawForest)
+
+#ifdef DEBUG_HIDE_INTERNALS
+import Data.List (isPrefixOf)
+#endif
 
 import Data.FastWeakBag (FastWeakBag, FastWeakBagTicket)
 import qualified Data.FastWeakBag as FastWeakBag
@@ -294,7 +305,7 @@ subscribeAndReadHead e sub = do
   return (subscription, occ)
 
 --TODO: Make this lazy in its input event
-headE :: Defer (SomeMergeInit x) m => Event x a -> m (Event x a)
+headE :: (Defer (SomeMergeInit x) m) => Event x a -> m (Event x a)
 headE originalE = do
   parent <- liftIO $ newIORef $ Just originalE
   defer $ SomeMergeInit $ do --TODO: Rename SomeMergeInit appropriately
@@ -318,7 +329,7 @@ data CacheSubscribed x a
 nowSpiderEventM :: HasSpiderTimeline x => EventM x (R.Event (SpiderTimeline x) ())
 nowSpiderEventM = SpiderEvent <$> now
 
-now :: Defer (Some Clear) m => m (Event x ())
+now :: (Defer (Some Clear) m) => m (Event x ())
 now = do
   nowOrNot <- liftIO $ newIORef $ Just ()
   scheduleClear nowOrNot
@@ -557,14 +568,14 @@ recalculateSubscriberHeight :: Height -> Subscriber x a -> IO ()
 recalculateSubscriberHeight = flip subscriberRecalculateHeight
 
 -- | Propagate everything at the current height
-propagate :: a -> WeakBag (Subscriber x a) -> EventM x ()
+propagate :: forall x a. a -> WeakBag (Subscriber x a) -> EventM x ()
 propagate a subscribers = withIncreasedDepth (Proxy::Proxy x) $
   -- Note: in the following traversal, we do not visit nodes that are added to the list during our traversal; they are new events, which will necessarily have full information already, so there is no need to traverse them
   --TODO: Should we check if nodes already have their values before propagating?  Maybe we're re-doing work
   WeakBag.traverse_ subscribers $ \s -> subscriberPropagate s a
 
 -- | Propagate everything at the current height
-propagateFast :: a -> FastWeakBag (Subscriber x a) -> EventM x ()
+propagateFast :: forall x a. a -> FastWeakBag (Subscriber x a) -> EventM x ()
 propagateFast a subscribers = withIncreasedDepth (Proxy::Proxy x) $
   -- Note: in the following traversal, we do not visit nodes that are added to the list during our traversal; they are new events, which will necessarily have full information already, so there is no need to traverse them
   --TODO: Should we check if nodes already have their values before propagating?  Maybe we're re-doing work
@@ -996,10 +1007,6 @@ newtype BehaviorM x a = BehaviorM { unBehaviorM :: ReaderIO (BehaviorEnv x) a }
 instance Monad (BehaviorM x) where
   {-# INLINE (>>=) #-}
   BehaviorM x >>= f = BehaviorM $ x >>= unBehaviorM . f
-  {-# INLINE (>>) #-}
-  (>>) = (*>)
-  {-# INLINE return #-}
-  return = pure
 #if !MIN_VERSION_base(4,13,0)
   {-# INLINE fail #-}
   fail s = BehaviorM $ fail s
@@ -1477,7 +1484,7 @@ filterStack :: String -> [String] -> [String]
 #ifdef DEBUG_HIDE_INTERNALS
 filterStack prefix = filter (not . (prefix `isPrefixOf`))
 #else
-filterStack _ = id
+filterStack _prefix = id
 #endif
 
 #ifdef DEBUG_CYCLES
@@ -2555,12 +2562,8 @@ instance HasSpiderTimeline x => Reflex.Class.MonadHold (SpiderTimeline x) (Spide
 
 
 instance HasSpiderTimeline x => Monad (Reflex.Class.Dynamic (SpiderTimeline x)) where
-  {-# INLINE return #-}
-  return = pure
   {-# INLINE (>>=) #-}
   x >>= f = SpiderDynamic $ dynamicDynIdentity $ newJoinDyn $ newMapDyn (unSpiderDynamic . f) $ unSpiderDynamic x
-  {-# INLINE (>>) #-}
-  (>>) = (*>)
 #if !MIN_VERSION_base(4,13,0)
   {-# INLINE fail #-}
   fail _ = error "Dynamic does not support 'fail'"
@@ -2841,15 +2844,12 @@ instance MonadAtomicRef (EventM x) where
   atomicModifyRef r f = liftIO $ atomicModifyRef r f
 
 -- | The monad for actions that manipulate a Spider timeline identified by @x@
-newtype SpiderHost (x :: Type) a = SpiderHost { unSpiderHost :: IO a } deriving (Functor, Applicative, MonadFix, MonadIO, MonadException, MonadAsyncException)
+newtype SpiderHost (x :: Type) a = SpiderHost { unSpiderHost :: IO a }
+  deriving (Functor, Applicative, MonadFix, MonadIO, MonadException, MonadAsyncException)
 
 instance Monad (SpiderHost x) where
   {-# INLINABLE (>>=) #-}
   SpiderHost x >>= f = SpiderHost $ x >>= unSpiderHost . f
-  {-# INLINABLE (>>) #-}
-  (>>) = (*>)
-  {-# INLINABLE return #-}
-  return = pure
 #if !MIN_VERSION_base(4,13,0)
   {-# INLINABLE fail #-}
   fail = MonadFail.fail
@@ -2875,10 +2875,6 @@ newtype SpiderHostFrame (x :: Type) a = SpiderHostFrame { runSpiderHostFrame :: 
 instance Monad (SpiderHostFrame x) where
   {-# INLINABLE (>>=) #-}
   SpiderHostFrame x >>= f = SpiderHostFrame $ x >>= runSpiderHostFrame . f
-  {-# INLINABLE (>>) #-}
-  (>>) = (*>)
-  {-# INLINABLE return #-}
-  return = pure
 #if !MIN_VERSION_base(4,13,0)
   {-# INLINABLE fail #-}
   fail s = SpiderHostFrame $ fail s

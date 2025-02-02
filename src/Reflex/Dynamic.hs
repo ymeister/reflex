@@ -79,14 +79,15 @@ module Reflex.Dynamic
   , unsafeDynamic
   ) where
 
+import Data.Functor.Compose
+import Data.Functor.Misc
+
 import Control.Monad.Fix
 import Control.Monad.Identity
 import Data.Align
 import Data.Dependent.Map (DMap)
 import qualified Data.Dependent.Map as DMap
 import Data.Dependent.Sum (DSum (..))
-import Data.Functor.Compose
-import Data.Functor.Misc
 import Data.GADT.Compare (GCompare (..), GEq (..), GOrdering (..))
 import Data.IntMap (IntMap)
 import Data.Kind (Type)
@@ -94,7 +95,8 @@ import Data.Map (Map)
 import Data.Maybe
 import Data.These
 import Data.Type.Equality ((:~:) (..))
-import Debug.Trace hiding (traceEventWith)
+
+import Debug.Trace (trace)
 
 #if !MIN_VERSION_base(4,18,0)
 import Control.Monad
