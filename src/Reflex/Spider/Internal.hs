@@ -52,6 +52,12 @@ import Data.Coerce
 import Data.Dependent.Map (DMap)
 import qualified Data.Dependent.Map as DMap
 import Data.Dependent.Sum (DSum (..))
+import Data.FastMutableIntMap (
+#if !MIN_VERSION_base(4,18,0)
+    PatchIntMap (..),
+#endif
+    FastMutableIntMap
+    )
 import qualified Data.FastMutableIntMap as FastMutableIntMap
 import Data.Foldable hiding (concat, elem, sequence_)
 import Data.Functor.Constant
@@ -79,12 +85,10 @@ import Witherable (Filterable, mapMaybe)
 #if !MIN_VERSION_base(4,18,0)
 import Control.Applicative (liftA2)
 import Control.Monad.Identity hiding (forM, forM_, mapM, mapM_)
-import Data.FastMutableIntMap (FastMutableIntMap, PatchIntMap (..))
 import Data.List (isPrefixOf)
 import Data.Monoid (mempty, (<>))
 #else
 import Control.Monad.Identity
-import Data.FastMutableIntMap (FastMutableIntMap)
 #endif
 
 #ifdef MIN_VERSION_semialign
