@@ -18,7 +18,7 @@ module Reflex.Dynamic.Uniq
 import GHC.Exts
 
 #if !MIN_VERSION_base(4,18,0)
-import Control.Monad.Applicative (Applicative(..))
+import Control.Applicative (Applicative(..))
 #endif
 
 import Reflex.Class
