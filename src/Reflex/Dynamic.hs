@@ -81,7 +81,6 @@ module Reflex.Dynamic
 
 import Data.Functor.Compose
 import Data.Functor.Misc
-import Reflex.Class
 
 import Control.Monad.Fix
 import Control.Monad.Identity
