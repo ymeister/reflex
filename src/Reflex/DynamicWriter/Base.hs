@@ -11,6 +11,9 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE StandaloneDeriving #-}
+#ifdef USE_REFLEX_OPTIMIZER
+{-# OPTIONS_GHC -fplugin=Reflex.Optimizer #-}
+#endif
 
 module Reflex.DynamicWriter.Base
   ( DynamicWriterT (..)

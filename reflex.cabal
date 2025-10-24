@@ -1,16 +1,5 @@
-cabal-version:      1.22
 name:               reflex
-version:            0.9.3.4
-license:            BSD3
-license-file:       LICENSE
-maintainer:         ryan.trinkle@gmail.com
-author:             Ryan Trinkle
-stability:          Experimental
-tested-with:
-    ghc ==8.4.4 || ==8.6.5 || ==8.8.1 || ==8.10.7 || ==9.0.1 || ==9.2.5 || ==9.4.5 || ==9.6.1 || ==9.8.2 || ==9.10.1 || ==9.12.2
-
-homepage:           https://reflex-frp.org
-bug-reports:        https://github.com/reflex-frp/reflex/issues
+version:            0.9.4.0
 synopsis:           Higher-order Functional Reactive Programming
 description:
     Interactive programs without callbacks or side-effects.
@@ -23,21 +12,34 @@ description:
     interface and an engine that efficiently implements that interface.
     .
     <https://reflex-frp.org>
-
+license:            BSD3
+license-file:       LICENSE
+author:             Ryan Trinkle
+maintainer:         ryan.trinkle@gmail.com
+stability:          Experimental
 category:           FRP
 build-type:         Simple
+cabal-version:      1.22
+homepage:           https://reflex-frp.org
+bug-reports:        https://github.com/reflex-frp/reflex/issues
 extra-source-files:
-    README.md
-    Quickref.md
-    ChangeLog.md
+  README.md
+  Quickref.md
+  ChangeLog.md
+
+tested-with:
+  GHC  ==8.4.4 || ==8.6.5 || ==8.8.1 || ==8.10.7 || ==9.0.1 || ==9.2.5 || ==9.4.5 || ==9.6.1 || ==9.8.2 || ==9.10.1 || ==9.12.2,
+  GHCJS ==8.6 || ==8.10
 
 source-repository head
     type:     git
     location: https://github.com/reflex-frp/reflex
 
-flag use-template-haskell
-    description: Use template haskell to generate lenses
-    default:     True
+flag use-reflex-optimizer
+    description:
+        Use the GHC plugin Reflex.Optimizer on some of the modules in the package.  This is still experimental.
+
+    default:     False
     manual:      True
 
 flag debug-trace-events
@@ -70,6 +72,43 @@ flag split-these
     default:     True
 
 library
+    default-language:   Haskell2010
+    hs-source-dirs:     src
+    build-depends:
+        MemoTrie >=0.6 && <0.7
+      , base >= 4.11 && < 4.22
+      , bifunctors >= 5.2 && < 5.7
+      , comonad >= 5.0.4 && < 5.1
+      , commutative-semigroups >= 0.1 && <0.3
+      , constraints >= 0.10 && <0.15
+      , constraints-extras >= 0.3 && < 0.5
+      , containers >= 0.6 && < 0.8
+      , data-default >= 0.5 && < 0.9
+      , dependent-map >= 0.3 && < 0.5
+      , dependent-sum >= 0.6 && < 0.8
+      , exceptions >= 0.10 && < 0.11
+      , exception-transformers >= 0.4 && < 0.5
+      , mmorph >= 1.0 && < 1.3
+      , monad-control >= 1.0.1 && < 1.1
+      , mtl >= 2.1 && < 2.4
+      , patch >= 0.0.7 && < 0.1
+      , prim-uniq >= 0.1.0.1 && < 0.3
+      , primitive >= 0.5 && < 0.10
+      , profunctors >= 5.3 && < 5.7
+      , random >= 1.1 && < 1.4
+      , ref-tf >= 0.4 && < 0.6
+      , reflection == 2.1.*
+      , semigroupoids >= 4.0 && < 7
+      , stm >= 2.4 && < 2.6
+      , syb >= 0.5 && < 0.8
+      , time >= 1.4 && < 1.15
+      , transformers >= 0.5 && < 0.7
+      , unbounded-delays >= 0.1.0.0 && < 0.2
+      , witherable >= 0.4 && < 0.6
+      , haskell-src-exts >= 1.16 && < 1.24
+      , haskell-src-meta >= 0.6 && < 0.9
+      , template-haskell >= 2.9 && < 2.24
+
     exposed-modules:
         Control.Monad.ReaderIO
         Data.AppendMap
@@ -84,6 +123,7 @@ library
         Reflex.BehaviorWriter.Class
         Reflex.Collection
         Reflex.Dynamic
+        Reflex.Dynamic.TH
         Reflex.Dynamic.Uniq
         Reflex.DynamicWriter
         Reflex.DynamicWriter.Base
@@ -126,43 +166,12 @@ library
       , patch:Data.Patch.Map as Reflex.Patch.Map
       , patch:Data.Patch.MapWithMove as Reflex.Patch.MapWithMove
 
-    hs-source-dirs:     src
-    default-language:   Haskell2010
     ghc-options:
         -Wall -fwarn-redundant-constraints -fwarn-tabs
         -funbox-strict-fields -O2 -fspecialise-aggressively
 
-    build-depends:
-        MemoTrie == 0.6.*
-      , base >= 4.11 && < 4.22
-      , bifunctors >= 5.2 && < 5.7
-      , comonad >= 5.0.4 && < 5.1
-      , commutative-semigroups >= 0.1 && <0.3
-      , constraints >= 0.10 && <0.15
-      , constraints-extras >= 0.3 && < 0.5
-      , containers >= 0.6 && < 0.8
-      , data-default >= 0.5 && < 0.9
-      , dependent-map >= 0.3 && < 0.5
-      , dependent-sum >= 0.6 && < 0.8
-      , exceptions >= 0.10 && < 0.11
-      , exception-transformers >= 0.4 && < 0.5
-      , mmorph >= 1.0 && < 1.3
-      , monad-control >= 1.0.1 && < 1.1
-      , mtl >= 2.1 && < 2.4
-      , patch >= 0.0.7 && < 0.1
-      , prim-uniq >= 0.1.0.1 && < 0.3
-      , primitive >= 0.5 && < 0.10
-      , profunctors >= 5.3 && < 5.7
-      , random >= 1.1 && < 1.4
-      , ref-tf >= 0.4 && < 0.6
-      , reflection == 2.1.*
-      , semigroupoids >= 4.0 && < 7
-      , stm >= 2.4 && < 2.6
-      , syb >= 0.5 && < 0.8
-      , time >= 1.4 && < 1.15
-      , transformers >= 0.5 && < 0.7
-      , unbounded-delays >= 0.1.0.0 && < 0.2
-      , witherable >= 0.4 && < 0.6
+    other-extensions:
+      TemplateHaskell
 
     if flag(split-these)
         build-depends:
@@ -179,6 +188,11 @@ library
         cpp-options:   -DDEBUG_TRACE_EVENTS
         build-depends: bytestring >=0.10.8 && <0.11
 
+    if flag(use-reflex-optimizer)
+        exposed-modules: Reflex.Optimizer
+        cpp-options:     -DUSE_REFLEX_OPTIMIZER
+        build-depends:   ghc
+
     if flag(debug-propagation)
         cpp-options:
             -DDEBUG -DDEBUG_TRACE_PROPAGATION -DDEBUG_TRACE_INVALIDATION
@@ -186,25 +200,18 @@ library
     if flag(debug-cycles)
         cpp-options: -DDEBUG_CYCLES
 
-    if flag(use-template-haskell)
-        exposed-modules:  Reflex.Dynamic.TH
-        cpp-options:      -DUSE_TEMPLATE_HASKELL
-        other-extensions: TemplateHaskell
-        build-depends:
-            haskell-src-exts >= 1.16 && < 1.24
-          , haskell-src-meta >= 0.6 && < 0.9
-          , template-haskell >= 2.9 && < 2.24
-
     if flag(fast-weak) && impl(ghcjs >=0)
         cpp-options: -DGHCJS_FAST_WEAK
 
-    if impl(ghcjs)
+    if impl(ghcjs >=0)
         build-depends: ghcjs-base >=0.2 && <0.3
 
 test-suite semantics
+    default-language: Haskell2010
     type:             exitcode-stdio-1.0
     main-is:          semantics.hs
     hs-source-dirs:   test
+    ghc-options:      -O2 -Wall -rtsopts
     other-modules:
         Reflex.Bench.Focused
         Reflex.Plan.Pure
@@ -212,11 +219,8 @@ test-suite semantics
         Reflex.Test
         Reflex.Test.Micro
         Reflex.TestPlan
-
-    default-language: Haskell2010
-    ghc-options:      -O2 -Wall -rtsopts
     build-depends:
-        base
+        base >= 4.11 && < 4.22
       , bifunctors
       , containers
       , deepseq
@@ -229,19 +233,18 @@ test-suite semantics
       , transformers
 
 test-suite CrossImpl
+    default-language: Haskell2010
     type:             exitcode-stdio-1.0
     main-is:          Reflex/Test/CrossImpl.hs
     hs-source-dirs:   test
+    ghc-options:      -O2 -Wall -rtsopts
     other-modules:
         Reflex.Test
         Reflex.TestPlan
         Reflex.Plan.Reflex
         Reflex.Plan.Pure
-
-    default-language: Haskell2010
-    ghc-options:      -O2 -Wall -rtsopts
     build-depends:
-        base
+        base >= 4.11 && < 4.22
       , containers
       , dependent-map
       , dependent-sum
@@ -252,12 +255,12 @@ test-suite CrossImpl
       , reflex
 
 test-suite hlint
+    default-language: Haskell2010
     type:             exitcode-stdio-1.0
     main-is:          hlint.hs
     hs-source-dirs:   test
-    default-language: Haskell2010
     build-depends:
-        base
+        base >= 4.11 && < 4.22
       , directory
       , filepath
       , filemanip
@@ -271,17 +274,17 @@ test-suite hlint
     else
         build-depends: hlint >=3.5 && <3.6
 
-    if impl(ghcjs >=0) || arch(javascript)
+    if (impl(ghcjs >=0) || arch(javascript))
         buildable: False
 
 test-suite EventWriterT
+    default-language: Haskell2010
     type:             exitcode-stdio-1.0
     main-is:          EventWriterT.hs
     hs-source-dirs:   test
     other-modules:    Test.Run
-    default-language: Haskell2010
     build-depends:
-        base
+        base >= 4.11 && < 4.22
       , containers
       , deepseq
       , dependent-map
@@ -297,14 +300,14 @@ test-suite EventWriterT
         build-depends: these-lens
 
 test-suite DebugCycles
+    default-language: Haskell2010
     type:             exitcode-stdio-1.0
     main-is:          DebugCycles.hs
     hs-source-dirs:   test
-    other-modules:    Test.Run
-    default-language: Haskell2010
     ghc-options:      -threaded
+    other-modules:    Test.Run
     build-depends:
-        base
+        base >= 4.11 && < 4.22
       , containers
       , deepseq
       , dependent-map
@@ -324,6 +327,7 @@ test-suite DebugCycles
           , semialign
 
 test-suite RequesterT
+    default-language: Haskell2010
     type:             exitcode-stdio-1.0
     main-is:          RequesterT.hs
     hs-source-dirs:   test
@@ -331,10 +335,8 @@ test-suite RequesterT
         Reflex.TestPlan
         Reflex.Plan.Pure
         Test.Run
-
-    default-language: Haskell2010
     build-depends:
-        base
+        base >= 4.11 && < 4.22
       , constraints
       , constraints-extras
       , containers
@@ -353,22 +355,22 @@ test-suite RequesterT
         build-depends: these-lens
 
 test-suite Headless
+    default-language: Haskell2010
     type:             exitcode-stdio-1.0
     main-is:          Headless.hs
     hs-source-dirs:   test
-    default-language: Haskell2010
     build-depends:
-        base
+        base >= 4.11 && < 4.22
       , reflex
 
 test-suite Adjustable
+    default-language: Haskell2010
     type:             exitcode-stdio-1.0
     main-is:          Adjustable.hs
     hs-source-dirs:   test
     other-modules:    Test.Run
-    default-language: Haskell2010
     build-depends:
-        base
+        base >= 4.11 && < 4.22
       , containers
       , dependent-sum
       , reflex
@@ -376,6 +378,7 @@ test-suite Adjustable
       , these
 
 test-suite QueryT
+    default-language: Haskell2010
     type:             exitcode-stdio-1.0
     main-is:          QueryT.hs
     hs-source-dirs:   test
@@ -384,10 +387,8 @@ test-suite QueryT
         Reflex.TestPlan
         Reflex.Plan.Reflex
         Reflex.Plan.Pure
-
-    default-language: Haskell2010
     build-depends:
-        base
+        base >= 4.11 && < 4.22
       , commutative-semigroups
       , containers
       , dependent-map
@@ -408,6 +409,7 @@ test-suite QueryT
           , these-lens
 
 test-suite GC-Semantics
+    default-language: Haskell2010
     type:             exitcode-stdio-1.0
     main-is:          GC.hs
     hs-source-dirs:   test
@@ -416,10 +418,8 @@ test-suite GC-Semantics
         Reflex.Plan.Reflex
         Reflex.TestPlan
         Test.Run
-
-    default-language: Haskell2010
     build-depends:
-        base
+        base >= 4.11 && < 4.22
       , containers
       , dependent-sum
       , dependent-map
@@ -435,6 +435,7 @@ test-suite GC-Semantics
         build-depends: semialign
 
 test-suite rootCleanup
+    default-language: Haskell2010
     type:             exitcode-stdio-1.0
     main-is:          rootCleanup.hs
     hs-source-dirs:   test
@@ -442,10 +443,8 @@ test-suite rootCleanup
         Reflex.Plan.Pure
         Reflex.TestPlan
         Test.Run
-
-    default-language: Haskell2010
     build-depends:
-        base
+        base >= 4.11 && < 4.22
       , containers
       , deepseq
       , dependent-sum
@@ -455,18 +454,17 @@ test-suite rootCleanup
       , these
 
 benchmark spider-bench
+    default-language: Haskell2010
     type:             exitcode-stdio-1.0
     main-is:          Main.hs
     hs-source-dirs:   bench test
+    ghc-options:      -Wall -O2 -rtsopts
     other-modules:
         Reflex.TestPlan
         Reflex.Plan.Reflex
         Reflex.Bench.Focused
-
-    default-language: Haskell2010
-    ghc-options:      -Wall -O2 -rtsopts
     build-depends:
-        base
+        base >= 4.11 && < 4.22
       , containers
       , criterion
       , deepseq
@@ -484,19 +482,18 @@ benchmark spider-bench
         buildable: False
 
 benchmark saulzar-bench
+    default-language: Haskell2010
     type:             exitcode-stdio-1.0
     main-is:          RunAll.hs
     c-sources:        bench-cbits/checkCapability.c
     hs-source-dirs:   bench test
+    ghc-options:      -Wall -O2 -rtsopts -threaded
     other-modules:
         Reflex.TestPlan
         Reflex.Plan.Reflex
         Reflex.Bench.Focused
-
-    default-language: Haskell2010
-    ghc-options:      -Wall -O2 -rtsopts -threaded
     build-depends:
-        base
+        base >= 4.11 && < 4.22
       , containers
       , criterion
       , deepseq

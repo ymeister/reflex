@@ -7,6 +7,9 @@ module Control.Monad.ReaderIO
   ( ReaderIO (..)
   ) where
 
+#if !MIN_VERSION_base(4,18,0)
+import Control.Applicative (liftA2)
+#endif
 import Control.Monad.Fix
 import Control.Monad
 import Control.Monad.Reader.Class

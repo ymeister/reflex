@@ -1,6 +1,9 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE ExistentialQuantification #-}
+#ifdef USE_REFLEX_OPTIMIZER
+{-# OPTIONS_GHC -fplugin=Reflex.Optimizer #-}
+#endif
 
 -- | This module defines the 'WeakBag' type, which represents a mutable
 -- collection of items that does not cause the items to be retained in memory.

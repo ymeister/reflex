@@ -5,6 +5,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeOperators #-}
+#ifdef USE_REFLEX_OPTIMIZER
+{-# OPTIONS_GHC -fplugin=Reflex.Optimizer #-}
+#endif
 
 -- | Template Haskell helper functions for building complex 'Dynamic' values.
 module Reflex.Dynamic.TH

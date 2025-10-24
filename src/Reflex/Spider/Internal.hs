@@ -20,6 +20,10 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE MultiWayIf #-}
+
+#ifdef USE_REFLEX_OPTIMIZER
+{-# OPTIONS_GHC -fplugin=Reflex.Optimizer #-}
+#endif
 {-# OPTIONS_GHC -Wunused-binds #-}
 
 -- | This module is the implementation of the 'Spider' 'Reflex' engine.  It uses
@@ -45,7 +49,12 @@ import Data.Coerce
 import Data.Dependent.Map (DMap)
 import qualified Data.Dependent.Map as DMap
 import Data.Dependent.Sum (DSum (..))
-import Data.FastMutableIntMap (FastMutableIntMap)
+import Data.FastMutableIntMap (
+#if !MIN_VERSION_base(4,18,0)
+    PatchIntMap (..),
+#endif
+    FastMutableIntMap
+    )
 import qualified Data.FastMutableIntMap as FastMutableIntMap
 import Data.Foldable hiding (concat, elem, sequence_)
 import Data.Functor.Constant
@@ -539,10 +548,12 @@ newSubscriberCoincidenceOuter subscribed = debugSubscriber ("SubscriberCoinciden
 newSubscriberCoincidenceInner :: forall x a. HasSpiderTimeline x => CoincidenceSubscribed x a -> IO (Subscriber x a)
 newSubscriberCoincidenceInner subscribed = debugSubscriber ("SubscriberCoincidenceInner" <> showNodeId subscribed) $ Subscriber
   { subscriberPropagate = \a -> {-# SCC "traverseCoincidenceInner" #-} do
+#ifdef DEBUG
       occ <- liftIO $ readIORef $ coincidenceSubscribedOccurrence subscribed
       case occ of
-        Just _ -> return () -- SubscriberCoincidenceOuter must have already propagated this event
+        Just _ -> error "Coincidence inner is propagating, but coincidence occurrence is already known?"
         Nothing -> do
+#endif          
           liftIO $ writeIORef (coincidenceSubscribedOccurrence subscribed) $ Just a
           scheduleClear $ coincidenceSubscribedOccurrence subscribed
           propagate a $ coincidenceSubscribedSubscribers subscribed
@@ -1161,9 +1172,7 @@ data Switch x a
             , switchSubscribed :: !(IORef (Maybe (SwitchSubscribed x a)))
             }
 
-#ifdef USE_TEMPLATE_HASKELL
 {-# ANN CoincidenceSubscribed "HLint: ignore Redundant bracket" #-}
-#endif
 data CoincidenceSubscribed x a
    = CoincidenceSubscribed { coincidenceSubscribedCachedSubscribed :: !(IORef (Maybe (CoincidenceSubscribed x a)))
                            , coincidenceSubscribedOccurrence :: !(IORef (Maybe a))
@@ -1612,9 +1621,7 @@ getRootSubscribed k r sub = do
       occ <- getOcc
       return (sln, subscribed, occ)
 
-#ifdef USE_TEMPLATE_HASKELL
 {-# ANN cleanupRootSubscribed "HLint: ignore Redundant bracket" #-}
-#endif
 cleanupRootSubscribed :: RootSubscribed x a -> IO ()
 cleanupRootSubscribed self@RootSubscribed { rootSubscribedKey = k, rootSubscribedCachedSubscribed = cached } = do
   rootSubscribedUninit self
