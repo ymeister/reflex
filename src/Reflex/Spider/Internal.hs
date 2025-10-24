@@ -43,9 +43,6 @@ import Control.Monad.Reader.Class
 import Control.Monad.IO.Class
 import Control.Monad.ReaderIO
 import Control.Monad.Ref
-#if !MIN_VERSION_base(4,13,0)
-import Control.Monad.Fail (MonadFail)
-#endif
 import qualified Control.Monad.Fail as MonadFail
 import Data.Align
 import Data.Coerce
@@ -85,6 +82,7 @@ import Witherable (Filterable, mapMaybe)
 #if !MIN_VERSION_base(4,18,0)
 import Control.Applicative (liftA2)
 import Control.Monad.Identity hiding (forM, forM_, mapM, mapM_)
+import Control.Monad.Fail (MonadFail)
 import Data.List (isPrefixOf)
 import Data.Monoid (mempty, (<>))
 #else
@@ -305,7 +303,7 @@ subscribeAndReadHead e sub = do
   return (subscription, occ)
 
 --TODO: Make this lazy in its input event
-headE :: (Defer (SomeMergeInit x) m) => Event x a -> m (Event x a)
+headE :: Defer (SomeMergeInit x) m => Event x a -> m (Event x a)
 headE originalE = do
   parent <- liftIO $ newIORef $ Just originalE
   defer $ SomeMergeInit $ do --TODO: Rename SomeMergeInit appropriately
@@ -329,7 +327,7 @@ data CacheSubscribed x a
 nowSpiderEventM :: HasSpiderTimeline x => EventM x (R.Event (SpiderTimeline x) ())
 nowSpiderEventM = SpiderEvent <$> now
 
-now :: (Defer (Some Clear) m) => m (Event x ())
+now :: Defer (Some Clear) m => m (Event x ())
 now = do
   nowOrNot <- liftIO $ newIORef $ Just ()
   scheduleClear nowOrNot
@@ -550,10 +548,12 @@ newSubscriberCoincidenceOuter subscribed = debugSubscriber ("SubscriberCoinciden
 newSubscriberCoincidenceInner :: forall x a. HasSpiderTimeline x => CoincidenceSubscribed x a -> IO (Subscriber x a)
 newSubscriberCoincidenceInner subscribed = debugSubscriber ("SubscriberCoincidenceInner" <> showNodeId subscribed) $ Subscriber
   { subscriberPropagate = \a -> {-# SCC "traverseCoincidenceInner" #-} do
+#ifdef DEBUG
       occ <- liftIO $ readIORef $ coincidenceSubscribedOccurrence subscribed
       case occ of
-        Just _ -> return () -- SubscriberCoincidenceOuter must have already propagated this event
+        Just _ -> error "Coincidence inner is propagating, but coincidence occurrence is already known?"
         Nothing -> do
+#endif          
           liftIO $ writeIORef (coincidenceSubscribedOccurrence subscribed) $ Just a
           scheduleClear $ coincidenceSubscribedOccurrence subscribed
           propagate a $ coincidenceSubscribedSubscribers subscribed
@@ -1172,9 +1172,7 @@ data Switch x a
             , switchSubscribed :: !(IORef (Maybe (SwitchSubscribed x a)))
             }
 
-#ifdef USE_TEMPLATE_HASKELL
 {-# ANN CoincidenceSubscribed "HLint: ignore Redundant bracket" #-}
-#endif
 data CoincidenceSubscribed x a
    = CoincidenceSubscribed { coincidenceSubscribedCachedSubscribed :: !(IORef (Maybe (CoincidenceSubscribed x a)))
                            , coincidenceSubscribedOccurrence :: !(IORef (Maybe a))
@@ -1623,9 +1621,7 @@ getRootSubscribed k r sub = do
       occ <- getOcc
       return (sln, subscribed, occ)
 
-#ifdef USE_TEMPLATE_HASKELL
 {-# ANN cleanupRootSubscribed "HLint: ignore Redundant bracket" #-}
-#endif
 cleanupRootSubscribed :: RootSubscribed x a -> IO ()
 cleanupRootSubscribed self@RootSubscribed { rootSubscribedKey = k, rootSubscribedCachedSubscribed = cached } = do
   rootSubscribedUninit self
@@ -2589,9 +2585,7 @@ mapDynamicSpider f = SpiderDynamic . newMapDyn f . unSpiderDynamic
 
 instance HasSpiderTimeline x => Applicative (Reflex.Class.Dynamic (SpiderTimeline x)) where
   pure = SpiderDynamic . dynamicConst
-#if MIN_VERSION_base(4,10,0)
   liftA2 f a b = SpiderDynamic $ Reflex.Spider.Internal.zipDynWith f (unSpiderDynamic a) (unSpiderDynamic b)
-#endif
   SpiderDynamic a <*> SpiderDynamic b = SpiderDynamic $ Reflex.Spider.Internal.zipDynWith ($) a b
   a *> b = R.unsafeBuildDynamic (R.sample $ R.current b) $ R.leftmost [R.updated b, R.tag (R.current b) $ R.updated a]
   (<*) = flip (*>) -- There are no effects, so order doesn't matter

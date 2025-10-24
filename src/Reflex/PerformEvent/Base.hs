@@ -25,8 +25,14 @@ module Reflex.PerformEvent.Base
   , hostPerformEventT
   ) where
 
-import Control.Lens
-import Control.Monad.Catch (MonadMask, MonadThrow, MonadCatch)
+import Reflex.Adjustable.Class
+import Reflex.Class
+import Reflex.Host.Class
+import Reflex.PerformEvent.Class
+import Reflex.Requester.Base
+import Reflex.Requester.Class
+
+import Control.Monad.Catch (MonadCatch, MonadMask, MonadThrow)
 import Control.Monad.Exception
 import Control.Monad.Fix
 import Control.Monad.Primitive
@@ -36,6 +42,7 @@ import Data.Coerce
 import Data.Dependent.Map (DMap)
 import qualified Data.Dependent.Map as DMap
 import Data.Dependent.Sum
+import Data.Functor.Identity
 import Data.IntMap.Strict (IntMap)
 import qualified Data.IntMap.Strict as IntMap
 import qualified Data.Semigroup as S
@@ -43,13 +50,6 @@ import qualified Data.Semigroup as S
 #if !MIN_VERSION_base(4,18,0)
 import Control.Monad.Identity
 #endif
-
-import Reflex.Class
-import Reflex.Adjustable.Class
-import Reflex.Host.Class
-import Reflex.PerformEvent.Class
-import Reflex.Requester.Base
-import Reflex.Requester.Class
 
 -- | A function that fires events for the given 'EventTrigger's and then runs
 -- any followup actions provided via 'PerformEvent'.  The given 'ReadPhase'

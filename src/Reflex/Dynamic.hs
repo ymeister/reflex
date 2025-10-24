@@ -79,15 +79,14 @@ module Reflex.Dynamic
   , unsafeDynamic
   ) where
 
-import Data.Functor.Compose
-import Data.Functor.Misc
-
 import Control.Monad.Fix
 import Control.Monad.Identity
 import Data.Align
 import Data.Dependent.Map (DMap)
 import qualified Data.Dependent.Map as DMap
 import Data.Dependent.Sum (DSum (..))
+import Data.Functor.Compose
+import Data.Functor.Misc
 import Data.GADT.Compare (GCompare (..), GEq (..), GOrdering (..))
 import Data.IntMap (IntMap)
 import Data.Kind (Type)
